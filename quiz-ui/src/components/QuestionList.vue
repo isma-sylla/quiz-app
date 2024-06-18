@@ -1,62 +1,91 @@
 <template>
+  <div>
+    <button class="btn btn-primary mt-3" @click="NewQuestion">Ajouter une question</button>
+    <table class="table table-striped mt-3">
+      <thead>
+        <tr>
+          <th scope="col">Position</th>
+          <th scope="col">Titre</th>
+          <th scope="col">Questions</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="question in questions" :key="question.position">
+          <td>{{ question.position }}</td>
+          <td>{{ question.title }}</td>
+          <td>{{ question.text }}</td>
+          <td>
+            <button class="btn btn-info btn-sm" @click="EditQuestion(question)">Modifier</button>
+            <button class="btn btn-danger btn-sm" @click="DeleteQuestion(question.position)">Supprimer</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
-    <div class="accordion accordion-flush rounded border border-light" id="accordionQuestion">
-      <div class="accordion-item" v-for="(question, index) in questions" :key="index">
-        <h2 class="accordion-header" :id="'heading' + question.position">
-          <button class="accordion-button bg-dark text-center border" :class="{ 'collapsed': index !== 0 }" type="button"
-            data-bs-toggle="collapse" :data-bs-target="'#collapse' + question.position" aria-expanded="true"
-            :aria-controls="'collapse' + item" style="color: rgb(226, 226, 226);">
-            {{ question.text }}
-          </button>
-        </h2>
-        <div :id="'collapse' + question.position" class="accordion-collapse collapse" :class="{ 'show': index === 0 }"
-          :aria-labelledby="'heading' + question.position" data-bs-parent="#accordionQuestion">
-          <div class="accordion-body bg-dark">
-            <QuestionAdminDisplay :question="question" :questionsSize="size" @question-update="UpdateQuestion"
-              :originalPosition="question.position" />
+    <QuestionEdition v-if="createQuestion" :create="true" @question-update="UpdateQuestion" />
+
+    <!-- Modal -->
+    <div class="modal fade" id="editQuestionModal" tabindex="-1" aria-labelledby="editQuestionModalLabel"
+      aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editQuestionModalLabel">Modifier la question</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <QuestionEdition v-if="editingQuestion" :create="false" :question="editingQuestion"
+              :originalPosition="editingQuestion.position" @question-update="UpdateQuestion" />
           </div>
         </div>
       </div>
     </div>
-  
-    <QuestionEdition v-if="createQuestion" :create="true" @question-update="UpdateQuestion" />
-    <button class="btn btn-primary mt-3" v-if="!createQuestion" @click="NewQuestion">Add question</button>
-  
-  
-  </template>
-  
-  
-  <script>
-  import quizApiService from '@/services/QuizApiService';
-  import adminStorageService from "@/services/AdminStorageServices";
-  import QuestionAdminDisplay from '@/components/QuestionAdminDisplay.vue';
-  import QuestionEdition from './QuestionEdition.vue';
-  export default {
-    data() {
-      return {
-        questions: [],
-        size: 0,
-        createQuestion: false
-      }
+  </div>
+</template>
+
+<script>
+import quizApiService from '@/services/QuizApiService';
+import adminStorageService from "@/services/AdminStorageServices";
+import QuestionEdition from './QuestionEdition.vue';
+import * as bootstrap from 'bootstrap'; // Import Bootstrap
+
+export default {
+  data() {
+    return {
+      questions: [],
+      size: 0,
+      createQuestion: false,
+      editingQuestion: null
+    }
+  },
+  components: {
+    QuestionEdition
+  },
+  methods: {
+    async UpdateQuestion() {
+      this.createQuestion = false;
+      this.editingQuestion = null;
+      let response = await quizApiService.getQuestions(adminStorageService.getToken());
+      this.questions = response.data.questions;
+      this.size = response.data.size;
+      console.log(this.questions);
     },
-    components: {
-      QuestionAdminDisplay,
-      QuestionEdition
+    NewQuestion() {
+      this.createQuestion = true;
     },
-    methods: {
-      async UpdateQuestion() {
-        this.createQuestion = false;
-        let response = await quizApiService.getQuestions(adminStorageService.getToken());
-        this.questions = response.data.questions;
-        this.size = response.data.size;
-        console.log(this.questions)
-      },
-      NewQuestion() {
-        this.createQuestion = true;
-      }
+    EditQuestion(question) {
+      this.editingQuestion = { ...question };
+      var modal = new bootstrap.Modal(document.getElementById('editQuestionModal'));
+      modal.show();
     },
-    created() {
-      this.UpdateQuestion()
-    },
-  }
-  </script>
+    async DeleteQuestion(position) {
+      await quizApiService.deleteQuestion(position, adminStorageService.getToken());
+      this.UpdateQuestion();
+    }
+  },
+  created() {
+    this.UpdateQuestion()
+  },
+}
+</script>
