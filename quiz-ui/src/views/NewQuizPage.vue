@@ -49,7 +49,7 @@ button {
     <form>
       <div class="mb-3">
         <label for="username" class="form-label">Entrer votre nom</label>
-        <input type="text" class="form-control" id="username" v-model="username" placeholder="pseudo"/>
+        <input type="text" class="form-control" id="username" v-model="username" placeholder="nom"/>
       </div>
       <button type="button" class="btn btn-primary" @click="launchNewQuiz">Commencer</button>
     </form>
