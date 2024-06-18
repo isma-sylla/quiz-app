@@ -11,11 +11,8 @@ class DBServices:
         # création d'un objet connection
         db_connection = sqlite3.connect(
             "./database/quizz.db", check_same_thread=False)
-
-        # active stack_trace (slow down the program)
-        # db_connection.set_trace_callback(print)
+        
         db_connection.isolation_level = None
-        # allow the use of foreign keys
         db_connection.execute("PRAGMA foreign_keys = 1")
 
         cur = db_connection.cursor()
